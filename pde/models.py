@@ -18,6 +18,7 @@ class PDE(models.Model):
     hash = encrypt(models.CharField(max_length=256, default=None, blank=True))
     # api = models.CharField(max_length=256, default="N/A", blank=True)
     api = models.ForeignKey(APIKey, on_delete=models.CASCADE)
+    snapshot_name = models.TextField(blank=True)
 
     def __str__(self):
         return self.user + " " + self.ip
