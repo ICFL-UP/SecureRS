@@ -1,11 +1,18 @@
-FROM python:3.7
+FROM python:3.10
 
 ADD . /SecureRS
 
+
+RUN apt-get update -y 
+RUN apt-get install borgbackup -y
+
 WORKDIR /SecureRS
 
-RUN chmod +x /install.sh
-CMD [ "./install.sh" ]
+RUN pip3 install -r requirements.txt
+RUN python manage.py makemigrations ; exit 0
+RUN python manage.py migrate; exit 0
+RUN echo "from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@example.com', 'admin')" | python manage.py shell ; exit 0
+CMD ["python", "manage.py" ,"runsslserver", "0.0.0.0:443"]
 
 
 EXPOSE 443/tcp

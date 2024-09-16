@@ -22,7 +22,7 @@ from django.dispatch import receiver
 
 from two_factor.signals import user_verified
 # Create your views here.
-
+import subprocess
 from django.core.exceptions import SuspiciousOperation
 import os
 import magic
@@ -143,13 +143,21 @@ def add(request):
         test = ""
         if ip and machine and user and rank != "" and filename and pde and originHash and api:
             n = PDE.objects.create(ip=ip, machine=machine, user=user, rank=rank,
-                                filename=filename, pde=pde, hash=originHash, api=api)
+                                filename=filename, hash=originHash, api=api)
             response = {"status": 'Success'}
-            file = request.FILES.get('pde', False)
-            n.save()
+            try:
+                if not os.path.exists(os.path.join(settings.BORG), machine):
+                    out = subprocess.check_output(["borg", "init", "--encryption", api, os.path.join(settings.BORG), machine], text=True)
+                    print(out)
+                # borg create --compression zlib,N /path/to/repo::arch ~
+                out = subprocess.check_output(["borg", "create", "--compression", "zlib,N", os.path.join(settings.BORG), machine]+"::"+originHash, pde.temporary_file_path, text=True)
+                print(out)
+                n.save()
+            except subprocess.CalledProcessError as ee:
+                response = {"status": "Error", "message": "Failed to store PDE file with Borg: " + str(ee)}
+
     except SuspiciousOperation as e:
-            response = {"status": 'Error',
-                            "message": str(e)}
+            response = {"status": 'Error', "message": str(e)}
     permission_classes = (HasAPIKey,)
     return Response(response)
 
@@ -172,7 +180,7 @@ def test_receiver(request, user, device, **kwargs):
 @login_required
 @otp_required
 @csrf_protect
-def get(request, path, ):
+def get(request, h):
     msg = ""
     if request.method == "POST":
         token = request.POST.get("token", None)
@@ -184,24 +192,29 @@ def get(request, path, ):
                     pde = PDE.objects.all()
                 else:
                     pde = PDE.objects.filter(user=request.user.get_username())
-                for p in pde:
-                    if p.pde == "pde/files/"+path:
-                        f = EncryptedFile(p.pde)
-                        content = f.read()
-                        m = hashlib.md5()
-                        m.update(content)
-                        message = 'Hi %(username)s,\n\n' \
-                                'You\'ve verified yourself and just downloaded a PDE file with the following details: \n\n' \
-                                'File: %(path)s\n' \
-                                'MD5: %(md5)s\n' \
-                                % {'username': request.user.get_username(), 'path': path, 'md5': m.hexdigest()}
-                        request.user.email_user(
-                            subject='PDE Download Success', message=message)
+                
+                pde = pde.objects.filter(hash=h).first()
+                if pde:
+                    os.mkdir("tmp/"+h)
+                    p = subprocess.Popen(["borg", "extract", os.path.join(settings.BORG_PATH, pde.machine)+"::"+pde.hash], cwd="tmp/"+h)
+                    for filename in os.listdir("tmp/"+h):
+                        with open(os.path.join("tmp/"+h, filename), 'r') as f:   
+                            content = f.read()
+                            m = hashlib.md5()
+                            m.update(content)
+                            message = 'Hi %(username)s,\n\n' \
+                                    'You\'ve verified yourself and just downloaded a PDE file with the following details: \n\n' \
+                                    'File: %(path)s\n' \
+                                    'MD5: %(md5)s\n' \
+                                    % {'username': request.user.get_username(), 'path': filename, 'md5': m.hexdigest()}
+                            request.user.email_user(
+                                subject='PDE Download Success', message=message)
 
-                        response = HttpResponse(content, content_type=magic.Magic(
-                            mime=True).from_buffer(content))
-                        response['Content-Disposition'] = 'attachment; filename=' + path
-                        return response
+                            response = HttpResponse(content, content_type=magic.Magic(
+                                mime=True).from_buffer(content))
+                            response['Content-Disposition'] = 'attachment; filename=' + filename
+                            os.remove(os.path.join("tmp/"+h, filename))
+                            return response
 
                 return HttpResponse(status=404)
             else:

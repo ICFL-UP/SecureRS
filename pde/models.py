@@ -8,7 +8,6 @@ from rest_framework_api_key.models import APIKey
 
 
 class PDE(models.Model):
-    pde = encrypt(models.FileField(upload_to='pde/files/', max_length=250))
     ip = models.CharField(max_length=16)
     machine = models.CharField(max_length=50)
     user = models.CharField(max_length=50)
