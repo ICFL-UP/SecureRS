@@ -12,7 +12,8 @@ If you are familiar with docker this is the fastest way to get SecureRS up and r
 Simply run:
 ```bash
 docker build . --tag "securers"
-docker run -d --name securers -p 443:443 securers
+docker run -d --name securers -p 8443:8443 --mount source=${pwd},destination=/SecureRS securers
+
 ```
 
 ## Installation

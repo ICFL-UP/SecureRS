@@ -1,0 +1,16 @@
+services:
+  securers:
+    build:
+      context: .
+      dockerfile: ./dockerfile
+    ports:
+      - 8443:8443
+    restart: always
+    volumes:
+      - .:/SecureRS
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge

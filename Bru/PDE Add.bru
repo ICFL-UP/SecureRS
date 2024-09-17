@@ -1,0 +1,29 @@
+meta {
+  name: PDE Add
+  type: http
+  seq: 2
+}
+
+post {
+  url: https://localhost:8443/pde/add/
+  body: multipartForm
+  auth: none
+}
+
+headers {
+  Api-Secret-Key: bFF6vOYn
+  Authorization: Token bFF6vOYn.2oKKcr5Ktbcaki4hEhh0nPeIWuCKMmbR
+  X-Api-Key: bFF6vOYn.2oKKcr5Ktbcaki4hEhh0nPeIWuCKMmbR
+  MD5SUM: b6d81b360a5672d80c27430f39153e2c
+}
+
+body:multipart-form {
+  ip: 192.168.1.120
+  machine: IronMachine
+  filename: one.img
+  user: Avinash
+  rank: 1
+  md5sum: b6d81b360a5672d80c27430f39153e2c
+  token: bFF6vOYn.2oKKcr5Ktbcaki4hEhh0nPeIWuCKMmbR
+  pde: @file(C:\Users\u14043778.UP\Documents\GitHub\SecureRS\one.img)
+}

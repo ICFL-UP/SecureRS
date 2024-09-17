@@ -6,8 +6,8 @@ import psutil
 import hashlib
 import datetime
 
-API_KEY = "IAWMMTs0.cHddQPXa343hvAKcUY7FZHOyyT8Vo55h"
-API_SECRET = "IAWMMTs0"
+API_KEY = "bFF6vOYn.2oKKcr5Ktbcaki4hEhh0nPeIWuCKMmbR"
+API_SECRET = "bFF6vOYn"
 SUCCESS = 0
 COUNTER = 1
 
@@ -36,7 +36,7 @@ def make_request(i):
     headers = {'Api-Secret-Key': API_SECRET, 'Api-Token': API_KEY, 'MD5SUM': hash_md5.hexdigest(),
                'X-Api-Key': API_KEY, 'Authorization': 'Token ' + API_KEY, 'Token': API_KEY}
     # 'content-type': 'multipart/form-data',
-    r = requests.post("https://localhost:8000/pde/add/",
+    r = requests.post("https://localhost:8443/pde/add/",
                       data=data, headers=headers, files=files, verify=False)
     # r = requests.post("https://localhost:8000/pde/add/", data=data, headers=headers, files=files, verify=False)
     print(r.text)

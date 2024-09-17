@@ -11,7 +11,7 @@ urlpatterns = [
     re_path(r'^add/$', views.add, name='add'),
     # url(r'files/(?P<path>.*)$', views.serve),
     re_path(
-        r"^files/(?P<path>.+)",  # up to you, but path is required
+        r"^files/(?P<h>.+)",  # up to you, but path is required
         views.get, name='get'  # your view, your permissions
 
     ),

@@ -137,7 +137,7 @@ def add(request):
         key = request.META.get('HTTP_X_API_KEY', False).split(" ")[-1]
         api = APIKey.objects.get(prefix=key.split(".")[0])
 
-        response = {"status": 'Error'}
+        response = {"status": 'Error', "message": "Something went wrong"}
         if request.META["HTTP_MD5SUM"] != originHash:
             raise SuspiciousOperation("Hash digest different from header and post data")
         test = ""
@@ -146,11 +146,13 @@ def add(request):
                                 filename=filename, hash=originHash, api=api)
             response = {"status": 'Success'}
             try:
-                if not os.path.exists(os.path.join(settings.BORG), machine):
-                    out = subprocess.check_output(["borg", "init", "--encryption", api, os.path.join(settings.BORG), machine], text=True)
+                if not os.path.exists(os.path.join(settings.BORG_PATH, machine)): 
+                    if not os.path.exists(settings.BORG_PATH):
+                        os.mkdir(settings.BORG_PATH)
+                    out = subprocess.check_output(["borg", "init", "--encryption", "repokey-blake2", os.path.join(settings.BORG_PATH, machine)], text=True, input=api.prefix+"\n"+api.prefix)
                     print(out)
                 # borg create --compression zlib,N /path/to/repo::arch ~
-                out = subprocess.check_output(["borg", "create", "--compression", "zlib,N", os.path.join(settings.BORG), machine]+"::"+originHash, pde.temporary_file_path, text=True)
+                out = subprocess.check_output(["borg", "create", "--compression", "zlib,6", os.path.join(settings.BORG_PATH, machine)+"::"+originHash, pde.temporary_file_path()], text=True, input=api.prefix)
                 print(out)
                 n.save()
             except subprocess.CalledProcessError as ee:
@@ -189,14 +191,21 @@ def get(request, h):
         if token:  # token
             if django_otp.match_token(request.user, token):
                 if request.user.is_staff:
-                    pde = PDE.objects.all()
+                    pde = PDE.objects.all().select_related("api")
                 else:
-                    pde = PDE.objects.filter(user=request.user.get_username())
+                    pde = PDE.objects.filter(user=request.user.get_username()).select_related("api")
                 
-                pde = pde.objects.filter(hash=h).first()
+                for p in pde:
+                    if p.hash == h:
+                        pde = p
+                        break
                 if pde:
-                    os.mkdir("tmp/"+h)
-                    p = subprocess.Popen(["borg", "extract", os.path.join(settings.BORG_PATH, pde.machine)+"::"+pde.hash], cwd="tmp/"+h)
+                    if not os.path.exists("tmp"):
+                        os.mkdir("tmp")
+                    if not os.path.exists("tmp/"+h):
+                        os.mkdir("tmp/"+h)
+                    api = pde.api.prefix
+                    p = subprocess.check_output(["borg", "extract", os.path.join("/SecureRS/"+settings.BORG_PATH, pde.machine)+"::"+pde.hash], cwd="tmp/"+h, input=api) 
                     for filename in os.listdir("tmp/"+h):
                         with open(os.path.join("tmp/"+h, filename), 'r') as f:   
                             content = f.read()
