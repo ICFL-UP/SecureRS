@@ -90,7 +90,7 @@ def details(request, user):
         data4 = data.filter(filename__icontains=search)
         data = data1 | data3 | data4
 
-    paginator = Paginator(data, 10)
+    paginator = Paginator(data, 9)
     page = request.GET.get('page')
     data = paginator.get_page(page)
 
@@ -140,7 +140,7 @@ def add(request):
         response = {"status": 'Error', "message": "Something went wrong"}
         if request.META["HTTP_MD5SUM"] != originHash:
             raise SuspiciousOperation("Hash digest different from header and post data")
-        test = ""
+        out = ""
         if ip and machine and user and rank != "" and filename and pde and originHash and api:
             n = PDE.objects.create(ip=ip, machine=machine, user=user, rank=rank,
                                 filename=filename, hash=originHash, api=api)
@@ -149,14 +149,21 @@ def add(request):
                 if not os.path.exists(os.path.join(settings.BORG_PATH, machine)): 
                     if not os.path.exists(settings.BORG_PATH):
                         os.mkdir(settings.BORG_PATH)
-                    out = subprocess.check_output(["borg", "init", "--encryption", "repokey-blake2", os.path.join(settings.BORG_PATH, machine)], text=True, input=api.prefix+"\n"+api.prefix)
+                    out = subprocess.check_output(["borg", "init", "--encryption", "repokey-blake2", os.path.join(settings.BORG_PATH, machine)], text=True, input=api.prefix+"\n"+api.prefix, stderr=subprocess.STDOUT)
                     print(out)
                 # borg create --compression zlib,N /path/to/repo::arch ~
-                out = subprocess.check_output(["borg", "create", "--compression", "zlib,6", os.path.join(settings.BORG_PATH, machine)+"::"+originHash, pde.temporary_file_path()], text=True, input=api.prefix)
+                out = subprocess.check_output(["borg", "create", "--compression", "obfuscate,3,auto,zstd,10", os.path.join(settings.BORG_PATH, machine)+"::"+originHash, pde.temporary_file_path()], text=True, input=api.prefix, stderr=subprocess.STDOUT)
                 print(out)
+                if "already exists" in out:
+                    response = {"status": "Success", "message": "File already stored, not storing again."}
+                n.snapshot_name = pde.temporary_file_path()
                 n.save()
             except subprocess.CalledProcessError as ee:
-                response = {"status": "Error", "message": "Failed to store PDE file with Borg: " + str(ee)}
+                print(ee.output)
+                if "already exists" in ee.output:
+                    response = {"status": "Success", "message": "File already stored, not storing again."}
+                else:
+                    response = {"status": "Error", "message": "Failed to store PDE file with Borg: " + str(ee)}
 
     except SuspiciousOperation as e:
             response = {"status": 'Error', "message": str(e)}
@@ -204,26 +211,27 @@ def get(request, h):
                         os.mkdir("tmp")
                     if not os.path.exists("tmp/"+h):
                         os.mkdir("tmp/"+h)
-                    api = pde.api.prefix
-                    p = subprocess.check_output(["borg", "extract", os.path.join("/SecureRS/"+settings.BORG_PATH, pde.machine)+"::"+pde.hash], cwd="tmp/"+h, input=api) 
-                    for filename in os.listdir("tmp/"+h):
-                        with open(os.path.join("tmp/"+h, filename), 'r') as f:   
-                            content = f.read()
-                            m = hashlib.md5()
-                            m.update(content)
-                            message = 'Hi %(username)s,\n\n' \
-                                    'You\'ve verified yourself and just downloaded a PDE file with the following details: \n\n' \
-                                    'File: %(path)s\n' \
-                                    'MD5: %(md5)s\n' \
-                                    % {'username': request.user.get_username(), 'path': filename, 'md5': m.hexdigest()}
-                            request.user.email_user(
-                                subject='PDE Download Success', message=message)
+                    api = pde.api.prefix 
+                    print(api)
+                    p = subprocess.check_output(["borg", "extract", os.path.join("/SecureRS/"+settings.BORG_PATH, pde.machine)+"::"+pde.hash], cwd="tmp/"+h, input=api.encode('utf-8'))
+                    
+                    with open("./tmp/"+h + pde.snapshot_name, 'rb') as f:  
+                        content = f.read()
+                        m = hashlib.md5()
+                        m.update(content)
+                        message = 'Hi %(username)s,\n\n' \
+                                'You\'ve verified yourself and just downloaded a PDE file with the following details: \n\n' \
+                                'File: %(path)s\n' \
+                                'MD5: %(md5)s\n' \
+                                % {'username': request.user.get_username(), 'path': pde.filename, 'md5': m.hexdigest()}
+                        request.user.email_user(
+                            subject='PDE Download Success', message=message)
 
-                            response = HttpResponse(content, content_type=magic.Magic(
-                                mime=True).from_buffer(content))
-                            response['Content-Disposition'] = 'attachment; filename=' + filename
-                            os.remove(os.path.join("tmp/"+h, filename))
-                            return response
+                        response = HttpResponse(content, content_type=magic.Magic(
+                            mime=True).from_buffer(content))
+                        response['Content-Disposition'] = 'attachment; filename=' + pde.filename
+                        # os.remove("./tmp/"+h + "/" + pde.snapshot_name)
+                        return response
 
                 return HttpResponse(status=404)
             else:

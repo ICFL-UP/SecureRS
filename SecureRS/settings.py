@@ -93,7 +93,6 @@ TEMPLATES = [
 
 FILE_UPLOAD_HANDLERS = [
     "handler.uploadhandler.HashFileUploadHandler",
-    "encrypted_files.uploadhandler.EncryptedFileUploadHandler",
     "django.core.files.uploadhandler.TemporaryFileUploadHandler"
 ]
 
