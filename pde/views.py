@@ -76,6 +76,8 @@ def details(request, user):
     if user == username or admin:
         data = PDE.objects.filter(user=user).order_by('date').reverse()
 
+    info = subprocess.check_output(["borg", "info", os.path.join(settings.BORG_PATH, data[0].machine)], text=True, input=data[0].api.prefix, stderr=subprocess.STDOUT)
+
     search = request.GET.get('search', '')
     if search.isdigit():
         data1 = data.filter(filename__icontains=search)
@@ -101,7 +103,8 @@ def details(request, user):
         'admin': admin,
         'username': username,
         'len': len(data),
-        'search': search
+        'search': search,
+        'info': "<br/>".join(info.split("\n")[8:]).replace("\n", "<br/><br/>").replace(" ", "&nbsp;") + "&nbsp;Number of entries: " + str(len(data)) + "<br/>------------------------------------------------------------------------------<br/>" 
     }
     return render(request, 'pde/details.html', context)
 
