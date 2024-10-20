@@ -94,7 +94,7 @@ def details(request, user):
 
     for d in data:
         d.meta = d.meta.replace("Malicious", "<span class='text-danger'>Malicious</span>")
-    paginator = Paginator(data, 9)
+    paginator = Paginator(data, 10)
     page = request.GET.get('page')
     data = paginator.get_page(page)
 
