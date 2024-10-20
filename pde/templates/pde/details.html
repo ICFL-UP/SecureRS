@@ -57,13 +57,13 @@
 		 {%  for p in pde %}
 			 {% if p.rank >= MALICIOUS %}
                  <div class="card border-danger">
-                     <h5 class="card-header bg-danger"><b class="text-white">File:</b> {{ p.filename  | trim | truncatechars:10 }}</h5>
+                     <h5 class="card-header bg-danger"><b class="text-white">File:</b> {{ p.filename  | trim | truncatechars:20 }}</h5>
              {% elif p.rank >= SUSPICIOUS %}
                  <div class="card border-warning">
-                     <h5 class="card-header bg-warning"><b class="text-white">File:</b> {{ p.filename  | trim | truncatechars:10 }}</h5>
+                     <h5 class="card-header bg-warning"><b class="text-white">File:</b> {{ p.filename  | trim | truncatechars:20 }}</h5>
              {% else %}
                  <div class="card border-success">
-                     <h5 class="card-header bg-success"><b class="text-white">File:</b> {{ p.filename  | trim | truncatechars:10 }}</h5>
+                     <h5 class="card-header bg-success"><b class="text-white">File:</b> {{ p.filename  | trim | truncatechars:20 }}</h5>
              {% endif %}
 
 				<div class="card-body">
@@ -79,6 +79,8 @@
 					{% endif %}
 					  	<button class="button text-center center-block align-content-center" onclick="openfile('/pde/files/{{ p.hash }}')" ><i class="fa fa-download"></i></button><br/><br/>
 					  </div>
+					  <span><b>File:</b> {{ p.filename | trim }}</span> <br/>
+					<span ><b>Meta: </b>{{ p.meta | safe  | linebreaks }}</span> <br/>
 					  <span ><b>MD5: </b>{{ p.hash   }}</span>
 				  </p>
 				</div>

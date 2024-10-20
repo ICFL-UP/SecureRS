@@ -92,6 +92,8 @@ def details(request, user):
         data4 = data.filter(filename__icontains=search)
         data = data1 | data3 | data4
 
+    for d in data:
+        d.meta = d.meta.replace("Malicious", "<span class='text-danger'>Malicious</span>")
     paginator = Paginator(data, 9)
     page = request.GET.get('page')
     data = paginator.get_page(page)
@@ -135,6 +137,7 @@ def add(request):
         user = strip_tags(request.POST.get("user", False))
         rank = float(strip_tags(request.POST.get("rank", False)))
         filename = strip_tags(request.POST.get("filename", False))
+        meta = strip_tags(request.POST.get("meta", False))
         pde = request.FILES.get('pde', False)
         originHash = strip_tags(request.POST.get('md5sum', False))
         key = request.META.get('HTTP_X_API_KEY', False).split(" ")[-1]
@@ -146,7 +149,7 @@ def add(request):
         out = ""
         if ip and machine and user and rank != "" and filename and pde and originHash and api:
             n = PDE.objects.create(ip=ip, machine=machine, user=user, rank=rank,
-                                filename=filename, hash=originHash, api=api)
+                                filename=filename, hash=originHash, api=api, meta=meta)
             response = {"status": 'Success'}
             try:
                 if not os.path.exists(os.path.join(settings.BORG_PATH, machine)): 
