@@ -142,17 +142,17 @@ def add(request):
         originHash = strip_tags(request.POST.get('md5sum', False))
         key = request.META.get('HTTP_X_API_KEY', False).split(" ")[-1]
         api = APIKey.objects.get(prefix=key.split(".")[0])
-
+        file_size = os.path.getsize(pde.temporary_file_path())
         response = {"status": 'Error', "message": "Something went wrong"}
         if request.META["HTTP_MD5SUM"] != originHash:
             raise SuspiciousOperation("Hash digest different from header and post data")
         out = ""
         if ip and machine and user and rank != "" and filename and pde and originHash and api:
-            n = PDE.objects.create(ip=ip, machine=machine, user=user, rank=rank,
+            n = PDE.objects.create(ip=ip, machine=machine, user=user, rank=rank, file_size=file_size,
                                 filename=filename, hash=originHash, api=api, meta=meta)
             response = {"status": 'Success'}
             try:
-                if not os.path.exists(os.path.join(settings.BORG_PATH, machine)): 
+                if not os.path.exists(os.path.join(settings.BORG_PATH, machine)):
                     if not os.path.exists(settings.BORG_PATH):
                         os.mkdir(settings.BORG_PATH)
                     out = subprocess.check_output(["borg", "init", "--encryption", "repokey-blake2", os.path.join(settings.BORG_PATH, machine)], text=True, input=api.prefix+"\n"+api.prefix, stderr=subprocess.STDOUT)

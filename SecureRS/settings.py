@@ -197,8 +197,8 @@ DEFF_FETCH_URL_NAME = ""
 CRYPTOGRAPHY_SALT = "RS_D3m0"
 AES_KEY = b"ecnxgffjomxmqrtlyzrskiudiivztxyk"
 
-SUSPICIOUS = 10  # This goes in hand with the rank parameter in the PDE
-MALICIOUS = 18    # This goes in hand with the rank parameter in the PDE
+SUSPICIOUS = 7  # This goes in hand with the rank parameter in the PDE
+MALICIOUS = 10    # This goes in hand with the rank parameter in the PDE
 
 API_KEY_CUSTOM_HEADER = "HTTP_X_API_KEY"
 

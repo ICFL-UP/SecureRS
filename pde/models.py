@@ -14,6 +14,7 @@ class PDE(models.Model):
     date = models.DateTimeField(default=datetime.now, blank=True)
     rank = models.FloatField(null=True, blank=True, default=None)
     filename = models.CharField(max_length=512)
+    file_size = models.CharField(max_length=250, blank=True)
     hash = encrypt(models.CharField(max_length=256, default=None, blank=True))
     # api = models.CharField(max_length=256, default="N/A", blank=True)
     api = models.ForeignKey(APIKey, on_delete=models.CASCADE)
