@@ -80,7 +80,7 @@
 					  	<button class="button text-center center-block align-content-center" onclick="openfile('/pde/files/{{ p.hash }}')" ><i class="fa fa-download"></i> <span class="pull-right"> {{ p.file_size | filesizeformat }}</span></button><br/><br/>
 					  </div>
 					  <span><b>File:</b> {{ p.filename | trim }}</span> <br/>
-					<span ><b>Meta: </b>{{ p.meta | safe  | linebreaks }}</span> <br/>
+					<span ><b>Meta: </b><small>{{ p.meta | safe  | linebreaks }}</small></span> <br/>
 					  <span ><b>MD5: </b>{{ p.hash   }}</span>
 				  </p>
 				</div>
