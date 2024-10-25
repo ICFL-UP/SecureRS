@@ -29,6 +29,7 @@ import magic
 from django.conf import settings
 from django.http import HttpResponse
 from profile import profile
+import json 
 
 
 @login_required
@@ -137,7 +138,7 @@ def add(request):
         user = strip_tags(request.POST.get("user", False))
         rank = float(strip_tags(request.POST.get("rank", False)))
         filename = strip_tags(request.POST.get("filename", False))
-        meta = strip_tags(request.POST.get("meta", False))
+        meta = strip_tags(request.POST.get("meta", False)) 
         pde = request.FILES.get('pde', False)
         originHash = strip_tags(request.POST.get('md5sum', False))
         key = request.META.get('HTTP_X_API_KEY', False).split(" ")[-1]
@@ -147,9 +148,26 @@ def add(request):
         if request.META["HTTP_MD5SUM"] != originHash:
             raise SuspiciousOperation("Hash digest different from header and post data")
         out = ""
+        i = 0
+        table = "<table class='table table-stripped table-sm' border='1'>"
+        if meta:
+            data = json.loads(meta)
+            for dd in data:
+                if i == 0:
+                    table += "<thead class='thead-dark'><tr>"
+                    for d in dd:
+                        table += "<th>" + str(d) + "</th>"
+                    table += "</tr></thead>"
+                    i += 1
+                else:
+                    table += "<tr>"
+                    for d in dd:
+                        table += "<td>" + str(d) + "</td>"
+                    table += "</tr>"
+        table += "</table>"
         if ip and machine and user and rank != "" and filename and pde and originHash and api:
             n = PDE.objects.create(ip=ip, machine=machine, user=user, rank=rank, file_size=file_size,
-                                filename=filename, hash=originHash, api=api, meta=meta)
+                                filename=filename, hash=originHash, api=api, meta=table)
             response = {"status": 'Success'}
             try:
                 if not os.path.exists(os.path.join(settings.BORG_PATH, machine)):
